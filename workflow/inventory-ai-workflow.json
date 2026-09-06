@@ -1,0 +1,756 @@
+{
+  "name": "Inventory Management AI System",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -176,
+        -48
+      ],
+      "id": "17213d5d-f920-46a6-8f5b-df4f195bfd23",
+      "name": "When chat message received",
+      "webhookId": "8bd3937a-9e13-4583-a2ab-24fda91ee66c",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are an AI Customer Support & Order Management Assistant for an e-commerce store.\n\nYou have access to the following tools:\n\n1. Get row(s) in sheet\n   - Use this tool to check product availability and current stock.\n\n2. Update row in sheet\n   - Use this tool ONLY after a valid customer order has been confirmed to reduce inventory.\n   - Never use this tool for any other customer request.\n\n3. Log New Order\n   - Use this tool ONLY after the order has been successfully confirmed.\n   - Save the order with Status = Approved.\n\n=================================================\nGENERAL BEHAVIOR\n=================================================\n\n- Re
+          ond in a friendly, professional customer service tone.\n- Understand both English and Urdu.\n- Reply in English, Urdu, or a mix of both depending on the customer's language.\n- Never guess information.\n- Never invent products.\n- Always use the exact product name from the inventory sheet.\n- Never expose internal inventory information unless required.\n\n=================================================\nPRODUCT AVAILABILITY\n=================================================\n\nIf a customer asks whether a product is available:\n\n1. Use \"Get row(s) in sheet\".\n2. Check the stock.\n\nIf stock is greater than 0:\n\nReply:\n\n\"Yes, this product is currently available.\"\n\nIf stock is 0:\n\nReply:\n\n\"Sorry, this product is currently out of stock.\"\n\nDo NOT tell customers the exact stock quantity unless they request more units than are available.\n\n=================================================\nORDER PLACEMENT\n=================================================\n\nTo place an order, collect these details:\n\n1. Product Name\n2. Quantity\n3. Customer Name\n4. Delivery Address\n\nCollect ONLY ONE missing detail at a time.\n\nNever assume missing information.\n\n=================================================\nQUANTITY VALIDATION\n=================================================\n\nThe order quantity must be a positive whole number greater than zero.\n\nReject values such as:\n\n- 0\n- negative numbers\n- decimal numbers\n- text instead of numbers\n\nIf invalid, politely ask the customer to enter a valid quantity.\n\n=================================================\nADDRESS VALIDATION\n=================================================\n\nA valid delivery address must:\n\n1. Include one of these cities:\n\n- Karachi\n- Lahore\n- Islamabad\n- Rawalpindi\n- Faisalabad\n- Multan\n- Hyderabad\n- Peshawar\n- Quetta\n\nAND\n\n2. Include location details such as:\n\n- House Number\n- Apartment / Flat\n- Street\n- Road\n- Block\n- Area\n- Sector\n- Phase\n- Building\n\nExamples of valid addresses:\n\nHouse 25, Block 4, Gulshan-e-Iqbal, Karachi\n\nFlat 12, DHA Phase 6, Lahore\n\nHouse 44, Street 10, G-11, Islamabad\n\nReject addresses like:\n\napple\n\nabc\n\nxyz\n\nhome\n\nKarachi\n\nLahore\n\n123\n\nIf the address is invalid, politely ask:\n\n\"Please provide your complete delivery address including your house/building details and city.\"\n\nDo NOT continue until a valid address is received.\n\n=================================================\nORDER VALIDATION\n=================================================\n\nOnce all required details are collected:\n\n1. Use \"Get row(s) in sheet\".\n2. Check available stock.\n\nIf stock is zero:\n\nReply:\n\n\"Sorry, this product is currently out of stock.\"\n\nDo NOT update stock.\n\nDo NOT log the order.\n\nIf requested quantity exceeds available stock:\n\nReply:\n\n\"Sorry, only X unit(s) are currently available. Please reduce the quantity or choose another product.\"\n\nDo NOT update stock.\n\nDo NOT log the order.\n\n=================================================\nORDER CONFIRMATION\n=================================================\n\nIf stock is sufficient:\n\nFollow this sequence ONLY:\n\n1. Use \"Update row in sheet\" to reduce the stock.\n2. Use \"Log New Order\" with Status = Approved.\n3. Confirm the order.\n\nReply with:\n\n✅ Your order has been confirmed.\n\nInclude:\n\n- Order ID\n- Product Name\n- Quantity\n- Customer Name\n- Delivery Address\n\nEnd with a friendly thank-you message.\n\n=================================================\nCUSTOMER RESTRICTIONS\n=================================================\n\nThis is a CUSTOMER chatbot.\n\nCustomers are NOT allowed to:\n\n- Increase stock\n- Decrease stock\n- Update inventory\n- Change product quantities\n- Restock products\n- Edit inventory records\n\nIf a customer asks to modify inventory, reply:\n\n\"Sorry, inventory management is only available to authorized store staff. I can help you check product availability or place an order.\"\n\nDo NOT use the \"Update row in sheet\" tool for such requests.\n\n=================================================\nSUPPORTED REQUESTS\n=================================================\n\nYou can help customers with:\n\n- Check if a product is available\n- Place a new order\n- Ask for required order details\n- Validate delivery address\n- Confirm an order\n- Inform customers if requested quantity exceeds available stock\n\n=================================================\nDO NOT\n=================================================\n\nNever:\n\n- Reveal internal inventory quantities unless necessary because the requested quantity exceeds available stock.\n- Confirm an order before checking stock.\n- Update stock before validating the order.\n- Log an order before updating stock.\n- Reduce stock below zero.\n- Accept incomplete or invalid addresses.\n- Modify inventory for customer requests.\n- Skip any validation step."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        32,
+        -48
+      ],
+      "id": "899f045c-2f11-41b0-a3c7-c26c8b74e6c9",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        48,
+        192
+      ],
+      "id": "102b512b-66e6-4869-ada4-02672041282e",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to search the Inventory Stock Register.\nSearch the \"Item Name\" column using the product name provided by the user.\nReturn the matching row and use the value from the \"Quantity in Stock\" column to answer.",
+        "documentId": {
+          "__rl": true,
+          "value": "1g7HyueAqgOLM6NJ9HPGduc0wZ2_YpX_P4F2A-JZaFcU",
+          "mode": "list",
+          "cachedResultName": "Inventory Stock Register",
+          "cachedResultUrl": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": ""
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Item Name",
+              "lookupValue": "={{$fromAI(\"product_name\")}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        192,
+        176
+      ],
+      "id": "bebaf154-0c0c-4717-a8c1-96c6d197724e",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "L7lXercke6BaS6rB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -112,
+        160
+      ],
+      "id": "aa604f30-d922-48eb-9c5a-528e4e5839bd",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "bq6OqAgFsuC9NBqI",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1g7HyueAqgOLM6NJ9HPGduc0wZ2_YpX_P4F2A-JZaFcU",
+          "mode": "list",
+          "cachedResultName": "Inventory Stock Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Inventory",
+          "cachedResultUrl": "https://docs.google.c"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Item Name": "={{ $fromAI(\"item_name\", \"Name of the item to update\") }}",
+            "Quantity in Stock": "={{ $fromAI(\"new_quantity\", \"The new total quantity after adding or subtracting\") }}"
+          },
+          "matchingColumns": [
+            "Item Name"
+          ],
+          "schema": [
+            {
+              "id": "Item Name",
+              "displayName": "Item Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Quantity in Stock",
+              "displayName": "Quantity in Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        336,
+        144
+      ],
+      "id": "36819bd0-fbfd-46fe-ba56-47928f00c4c2",
+      "name": "Update row in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "L7lXercke6BaS6rB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1g7HyueAqgOLM6NJ9HPGduc0wZ2_YpX_P4F2A-JZaFcU",
+          "mode": "list",
+          "cachedResultName": "Inventory Stock Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1829389081,
+          "mode": "list",
+          "cachedResultName": "Orders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Order ID": "={{ $fromAI(\"order_id\", \"A unique order number, use current timestamp\") }}",
+            "Item Name": "={{ $fromAI(\"item_name\", \"Name of the ordered item\") }}",
+            "Quantity": "={{ $fromAI(\"quantity\", \"Quantity ordered\") }}",
+            "Customer Name": "={{ $fromAI(\"customer_name\", \"Name of the customer\") }}",
+            "Address": "={{ $fromAI(\"address\", \"Delivery address of the customer\") }}",
+            "Status": "={{ $fromAI(\"status\", \"Order status, always Approved\") }}",
+            "Date": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Order ID",
+              "displayName": "Order ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Item Name",
+              "displayName": "Item Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quantity",
+              "displayName": "Quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Address",
+              "displayName": "Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        48
+      ],
+      "id": "0817e2cf-fbee-47b1-890f-985edd378e6c",
+      "name": "Append row in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "L7lXercke6BaS6rB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 21
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -96,
+        368
+      ],
+      "id": "5504c2c5-99ab-459e-96b8-876605c4c642",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1g7HyueAqgOLM6NJ9HPGduc0wZ2_YpX_P4F2A-JZaFcU",
+          "mode": "list",
+          "cachedResultName": "Inventory Stock Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Inventory",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        112,
+        368
+      ],
+      "id": "190ed86b-3b0a-4bc3-8505-48f6141af3b9",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "L7lXercke6BaS6rB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "96e9dbec-5ccc-4b60-85d1-01808dcab75c",
+              "leftValue": "={{ Number($json[\"Quantity in Stock\"]) }}",
+              "rightValue": "={{ Number($json[\"Reorder Level\"]) }}",
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        336,
+        368
+      ],
+      "id": "ed5a01b1-b544-4dab-a494-c6788a52577a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1g7HyueAqgOLM6NJ9HPGduc0wZ2_YpX_P4F2A-JZaFcU",
+          "mode": "list",
+          "cachedResultName": "Inventory Stock Register",
+          "cachedResultUrl": "https://docs.google.com"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Inventory",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Quantity in Stock": "={{ Number($json[\"Quantity in Stock\"]) + Number($json[\"Reorder Quantity\"]) }}",
+            "Item Name": "={{ $json[\"Item Name\"] }}"
+          },
+          "matchingColumns": [
+            "Item Name"
+          ],
+          "schema": [
+            {
+              "id": "Item Name",
+              "displayName": "Item Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Quantity in Stock",
+              "displayName": "Quantity in Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reorder Level",
+              "displayName": "Reorder Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reorder Quantity",
+              "displayName": "Reorder Quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        352
+      ],
+      "id": "89aaf67d-4887-475e-8725-65f9405286d7",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "L7lXercke6BaS6rB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1g7HyueAqgOLM6NJ9HPGduc0wZ2_YpX_P4F2A-JZaFcU",
+          "mode": "list",
+          "cachedResultName": "Inventory Stock Register",
+          "cachedResultUrl": "https://docs.google.com/"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 232320422,
+          "mode": "list",
+          "cachedResultName": "Inventory Logs",
+          "cachedResultUrl": "https://docs.google.com/"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date & Time": "={{ $now }}",
+            "Item Name": "={{ $('Get row(s) in sheet').item.json[\"Item Name\"] }}",
+            "Old Stock": "={{ $('Get row(s) in sheet').item.json[\"Quantity in Stock\"] }}",
+            "Reorder Qty": "={{ $('Get row(s) in sheet').item.json[\"Reorder Quantity\"] }}",
+            "New Stock": "={{ $('Get row(s) in sheet').item.json[\"Quantity in Stock\"] + $('Get row(s) in sheet').item.json[\"Reorder Quantity\"] }}",
+            "Status": "Auto Restocked"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date & Time",
+              "displayName": "Date & Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Item Name",
+              "displayName": "Item Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Old Stock",
+              "displayName": "Old Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reorder Qty",
+              "displayName": "Reorder Qty",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "New Stock",
+              "displayName": "New Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        832,
+        352
+      ],
+      "id": "a387539d-3374-487c-a662-01ccf775b3b5",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "L7lXercke6BaS6rB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "YOUR_PHONE_NUMBER_ID",
+        "recipientPhoneNumber": "+92-335-81xxxxx",
+        "textBody": "=🚨 Inventory Restocked\n\nItem: {{ $('Get row(s) in sheet').item.json[\"Item Name\"] }}\n\nPrevious Stock: {{ $('Get row(s) in sheet').item.json[\"Quantity in Stock\"] }}\n\nReorder Level: {{ $('Get row(s) in sheet').item.json[\"Reorder Level\"] }}\n\nRestocked Quantity: {{ $('Get row(s) in sheet').item.json[\"Reorder Quantity\"] }}\n\nUpdated Stock:\n{{\n$('Get row(s) in sheet').item.json[\"Quantity in Stock\"] +\n$('Get row(s) in sheet').item.json[\"Reorder Quantity\"]\n}}\n\nStatus: Auto Restocked ✅",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        1040,
+        352
+      ],
+      "id": "186814ce-8a5a-4042-bde8-562b36985def",
+      "name": "Send message",
+      "webhookId": "f4ab00f0-2dbd-4081-889e-fe767343feaf",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "7QdHNTvoCyYu9dEL",
+          "name": "WhatsApp account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+
+        []
+      ]
+    },
+    "Update row in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7f968cef-e1d0-4924-8ee0-f56a37b8e751",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "674a1525cd99d2c6d6eac9dda6b0f8691cc26f8fafd215a6f7c34c49f0959310"
+  },
+  "nodeGroups": [],
+  "id": "onEOdTHKxD3Qjc09",
+  "tags": []
+}
